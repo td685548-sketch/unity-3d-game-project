@@ -326,33 +326,6 @@ public static class SwordDuelTestTool
             Check(sword.Mode == SwordMode.Strike && sword.HasPursuitCommand,
                 "untargeted launch remains in the battle", "mode=" + sword.Mode);
 
-            swarm.RecallAll();
-            yield return new Wait(1.5f);
-            target.Revive();
-            dummy.transform.position = home + new Vector3(0, 1, 13);
-            Set(target, "maxHealth", 10000f);
-            target.Revive();
-            var flock = new List<FlyingSword>();
-            for (int k = 0; k < Mathf.Min(12, swarm.Swords.Count); k++)
-            {
-                flock.Add(swarm.Swords[k]);
-                swarm.Swords[k].LaunchPursuit(target, 26f, 2f, 0.25f);
-            }
-            yield return new Wait(2f);
-            float largestSpan = 0f;
-            for (int tick = 0; tick < 50; tick++)
-            {
-                for (int a = 0; a < flock.Count; a++)
-                    for (int b = a + 1; b < flock.Count; b++)
-                        largestSpan = Mathf.Max(largestSpan,
-                            Vector3.Distance(flock[a].transform.position, flock[b].transform.position));
-                yield return null;
-            }
-            Check(largestSpan < 4.5f, "twelve swords keep a compact flock through turns", "maximum span=" + largestSpan);
-            flock[3].Deflect(0.25f);
-            yield return new Wait(0.8f);
-            Check(Vector3.Distance(flock[3].transform.position, flock[4].transform.position) < 2.5f,
-                "blocked blade stays with its flock", "separation=" + Vector3.Distance(flock[3].transform.position, flock[4].transform.position));
 
         }
         finally

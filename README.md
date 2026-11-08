@@ -1,3 +1,6 @@
+# Phàm Kiếm Lục
+
+Game hành động tu tiên 3D xây dựng bằng Unity, với ngự kiếm, đấu phi kiếm và thần thông.
 
 ## Mở dự án
 
@@ -12,12 +15,20 @@ Dự án sử dụng URP, Input System, Cinemachine và Visual Effect Graph. Uni
 
 Xem [hướng dẫn chơi thử](Docs/ChoiThu.md) để biết phím điều khiển, cách đổi góc nhìn, bay bằng Phong Lôi Sí, dùng Phá Không và thử bảy chiêu mới với yêu thú trong sân tập.
 
+## Tính năng chính
+
+- Phi kiếm truy kích độc lập, lượn đánh mục tiêu và giao đấu với kiếm đối phương.
+- Nhấn **R** để thu kiếm; kiếm tự thu khi mục tiêu chết.
+- **G** dùng hộ thể; **T** thi triển Kim Liên.
+- Bảng Admin hỗ trợ thử nghiệm, gồm tùy chọn máu vô hạn cho địch.
+
 ## Cấu trúc
 
 - `Assets/_Game/`: scene, script, prefab, shader, model và dữ liệu game.
 - `Packages/`, `ProjectSettings/`: cấu hình cần thiết để mở lại dự án.
 - `ArtSource/`: nguồn mỹ thuật, gồm file Blender.
 - `Docs/`: tài liệu triển khai và kiểm thử.
+- `REF/`: video tham chiếu phục vụ phát triển.
 
 `Library/`, `Temp/`, `Logs/`, `UserSettings/`, bản build và ảnh/clip thử trong `Assets/Screenshots/` được bỏ qua theo `.gitignore`. Unity sẽ tạo lại cache khi mở dự án.
 

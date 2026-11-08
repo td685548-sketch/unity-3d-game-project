@@ -4,7 +4,7 @@ using UnityEngine;
 /// Nối PlayerController và SwordSwarm với Animator của mô hình nhân vật.
 /// - Đứng/Đi/Chạy: truyền tốc độ thật (mét/giây) vào Blend Tree; chỉnh tốc độ phát anim cho khớp tốc độ mặt đất để chân không trượt.
 /// - Nhảy, rơi, tiếp đất: truyền trạng thái chạm đất và vận tốc thẳng đứng.
-/// - Phóng kiếm (chuột phải khi Ngự Kiếm Thuật đang bật): ngay khi bấm, tay chuyển (0.08s) tới tư thế phóng lấy từ clip PhongKiem2 ở lớp thân trên,
+/// - Phóng kiếm (chuột phải khi Ngự Kiếm Thuật đang bật): ngay khi bấm, tay phát phần đưa tay (0.36s) của clip Rokoko mới tới tư thế phóng ở lớp thân trên,
 ///   giữ nguyên tư thế đó khi còn bắn liên tiếp, ngừng bắn 0.35s mới phát phần thu tay về. Kiếm chỉ rời đội hình khi tay tới nơi.
 ///   Mỗi kiếm phóng đi giật cẳng tay/bàn tay phải một chút, thân trên nghiêng theo tâm ngắm (tối đa 25 độ).
 /// - Bật Ngự Kiếm Thuật (phím Q) và đổi đội hình (Z/X/C): bật anim Niệm Quyết.
@@ -39,37 +39,38 @@ public class PlayerAnimator : MonoBehaviour
     [Tooltip("Thời gian ân hạn (giây) trước khi coi là 'không chạm đất'. Tránh anim rơi chớp nháy khi bước qua bậc thang hay dốc nhỏ.")]
     [SerializeField, Min(0f)] private float groundedGrace = 0.12f;
 
-    [Header("Tư thế phóng kiếm (clip PhongKiem2)")]
+    [Header("Tư thế phóng kiếm")]
+    [SerializeField] private AnimationClip shootPoseClip;
     [Tooltip("Điểm ngắm camera để thân trên ngẩng/cúi theo hướng tâm ngắm (đối tượng CameraTarget). Để trống thì tự tìm.")]
     [SerializeField] private CameraOrbit cameraOrbit;
 
-    [Tooltip("Giây trong clip PhongKiem2 của khung hình 'tay tới điểm phóng' (tay giơ lên và dừng lại). Tư thế giữ lúc bắn chính là khung này.")]
-    [SerializeField, Min(0f)] private float shootKeyTime = 0.9f;
+    [Tooltip("Giây trong clip phóng kiếm của khung hình 'tay tới điểm phóng' (tay giơ lên và dừng lại). Tư thế giữ lúc bắn chính là khung này.")]
+    [SerializeField, Min(0f)] private float shootKeyTime = 1.066667f;
 
     [Tooltip("Thời gian chuyển từ tư thế hiện tại sang tư thế phóng ngay khi bấm bắn (giây). Kiếm rời đội hình đúng sau khoảng này ở phát đầu tiên.")]
-    [SerializeField, Min(0.01f)] private float raiseTime = 0.08f;
+    [SerializeField, Min(0.01f)] private float raiseTime = 0.36f;
 
     [Tooltip("Ngừng bắn bao nhiêu giây thì bắt đầu thu tay về (giây).")]
     [SerializeField, Min(0f)] private float releaseDelay = 0.35f;
 
     [Tooltip("Tốc độ phát phần thu tay về (1 = tốc độ gốc của clip, 2.5 = nhanh gấp 2.5 lần).")]
-    [SerializeField, Min(0.1f)] private float retractSpeed = 2.5f;
+    [SerializeField, Min(0.1f)] private float retractSpeed = 1.4f;
 
     [Tooltip("Giây trong clip mà tay đã về xong tư thế nghỉ. Phát tới đây thì trả quyền lại cho lớp nền.")]
-    [SerializeField, Min(0f)] private float retractEndClipTime = 2.95f;
+    [SerializeField, Min(0f)] private float retractEndClipTime = 3f;
 
     [Tooltip("Thời gian hòa trộn lúc kết thúc thu tay (giây).")]
-    [SerializeField, Min(0f)] private float retractBlendTime = 0.12f;
+    [SerializeField, Min(0f)] private float retractBlendTime = 0.2f;
 
     [Header("Giật tay mỗi phát bắn")]
     [Tooltip("Góc cẳng tay phải đẩy tới trước mỗi khi một kiếm phóng đi (độ).")]
-    [SerializeField, Range(0f, 30f)] private float kickForearmAngle = 8f;
+    [SerializeField, Range(0f, 30f)] private float kickForearmAngle = 2f;
 
     [Tooltip("Góc bàn tay phải đẩy thêm tới trước (độ).")]
-    [SerializeField, Range(0f, 30f)] private float kickHandAngle = 8f;
+    [SerializeField, Range(0f, 30f)] private float kickHandAngle = 2f;
 
     [Tooltip("Thời gian cú giật đi và về (giây).")]
-    [SerializeField, Min(0.02f)] private float kickTime = 0.1f;
+    [SerializeField, Min(0.02f)] private float kickTime = 0.16f;
 
     [Header("Thân trên theo tâm ngắm")]
     [Tooltip("Thân trên ngẩng/cúi theo hướng nhìn của camera khi bắn, tối đa bao nhiêu độ.")]
@@ -112,6 +113,7 @@ public class PlayerAnimator : MonoBehaviour
 
     private ShootPhase phase;
     private float raiseEnd;
+    private float raiseStarted;
     private float retractEnd;
     private float lastShootActivity;
     private float phaseGraceUntil;
@@ -141,9 +143,10 @@ public class PlayerAnimator : MonoBehaviour
         if (animator != null)
         {
             upperLayer = animator.GetLayerIndex(upperLayerName);
-            // Độ dài clip PhongKiem2 (giây) để đổi shootKeyTime ra thời gian chuẩn hóa
-            foreach (AnimationClip c in animator.runtimeAnimatorController.animationClips)
-                if (c != null && c.name == "PhongKiem2") shootClipLength = c.length;
+            // Độ dài clip phóng kiếm (giây) để đổi shootKeyTime ra thời gian chuẩn hóa
+            if (shootPoseClip != null) shootClipLength = shootPoseClip.length;
+            else foreach (AnimationClip c in animator.runtimeAnimatorController.animationClips)
+                if (c != null && (c.name == "PhongKiem2" || c.name == "PhongKiem_Rokoko")) shootClipLength = c.length;
             spineBone = animator.GetBoneTransform(HumanBodyBones.Spine);
             chestBone = animator.GetBoneTransform(HumanBodyBones.Chest);
             upperChestBone = animator.GetBoneTransform(HumanBodyBones.UpperChest);
@@ -231,7 +234,7 @@ public class PlayerAnimator : MonoBehaviour
     public void HoldSkillPose() { RequestShootPose(); lastShootActivity = Time.time; }
 
     /// <summary>
-    /// SwordSwarm gọi ngay khi bấm bắn: đưa tay vào tư thế phóng (khung 'shootKeyTime' của clip PhongKiem2)
+    /// SwordSwarm gọi ngay khi bấm bắn: đưa tay vào tư thế phóng (khung 'shootKeyTime' của clip phóng kiếm)
     /// và trả về số giây còn lại cho tới khi tay tới nơi. Tay đã ở đó rồi thì trả về 0 (bắn ngay, không lấy đà lại).
     /// </summary>
     private float RequestShootPose()
@@ -241,13 +244,14 @@ public class PlayerAnimator : MonoBehaviour
         if (phase == ShootPhase.Holding) return 0f;
         if (phase == ShootPhase.Raising) return Mathf.Max(0f, raiseEnd - Time.time);
 
-        // Đang nghỉ hoặc đang thu tay: chuyển thẳng tới khung tay duỗi, không phát phần lấy đà
+        // Đang nghỉ hoặc đang thu tay: phát phần đưa tay qua Motion Time, sau đó giữ đúng khung phóng
         // Trạng thái giữ dùng "Motion Time" (ShootHoldTime) để đứng yên đúng ở khung shootKeyTime
-        animator.SetFloat(HoldTimeId, shootKeyTime / shootClipLength);
-        animator.CrossFadeInFixedTime(HoldStateId, raiseTime, upperLayer);
+        animator.SetFloat(HoldTimeId, 0f);
+        animator.CrossFadeInFixedTime(HoldStateId, Mathf.Min(0.14f, raiseTime), upperLayer);
+        raiseStarted = Time.time;
         phase = ShootPhase.Raising;
         raiseEnd = Time.time + raiseTime;
-        phaseGraceUntil = Time.time + 0.2f;
+        phaseGraceUntil = Time.time + raiseTime + 0.12f;
         return raiseTime;
     }
 
@@ -275,7 +279,7 @@ public class PlayerAnimator : MonoBehaviour
         animator.SetFloat(VerticalSpeedId, player.VerticalVelocity);
 
         animator.SetFloat(RetractSpeedId, retractSpeed);
-        animator.SetFloat(HoldTimeId, shootKeyTime / shootClipLength);
+        if (phase != ShootPhase.Raising) animator.SetFloat(HoldTimeId, shootKeyTime / Mathf.Max(0.01f, shootClipLength));
         UpdateShootPhase();
         UpdateUpperLayer();
     }
@@ -305,6 +309,8 @@ public class PlayerAnimator : MonoBehaviour
         switch (phase)
         {
             case ShootPhase.Raising:
+                float progress = Mathf.Clamp01((Time.time - raiseStarted) / Mathf.Max(0.01f, raiseTime));
+                animator.SetFloat(HoldTimeId, Mathf.SmoothStep(0f, shootKeyTime / Mathf.Max(0.01f, shootClipLength), progress));
                 if (Time.time >= raiseEnd) phase = ShootPhase.Holding;
                 break;
             case ShootPhase.Holding:

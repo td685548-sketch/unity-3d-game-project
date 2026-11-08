@@ -1,0 +1,35 @@
+{
+  "status": "integrated_in_gameplay",
+  "provider": "Rokoko Vision",
+  "job_url": "https://create.rokoko.com/jobs/v1_9b47c2b0aafa47a7bb08b6be4f1d623a",
+  "project": "Rokoko Create",
+  "clip": "TrongThanSu_NiemQuyet_13p3_16p0",
+  "source_start_seconds": 13.3,
+  "source_duration_seconds": 2.7,
+  "source_rotation": "90 degrees counterclockwise",
+  "fps": 30,
+  "target_rig": "Game Idle Mixamo rig, 25 bones",
+  "blender_setup": "ArtSource/Blender/NiemQuyet_Retarget_Pilot.blend",
+  "game_animation_replaced": true,
+  "provided_export": "Rokoko_Combined_Raw.fbx",
+  "provided_export_duration_seconds": 10,
+  "provided_export_source_job_verified": false,
+  "unity_mode": "Humanoid muscle clips baked with game Avatar",
+  "clips": [
+    {
+      "name": "NiemQuyet_GameRig_Pilot",
+      "seconds": 6
+    },
+    {
+      "name": "PhongKiem_GameRig_Pilot",
+      "seconds": 3
+    }
+  ],
+  "gameplay_clips": [
+    "NiemQuyet_Rokoko.anim",
+    "PhongKiem_Rokoko.anim"
+  ],
+  "release_gate_seconds": 0.36,
+  "hold_source_time_seconds": 1.066667,
+  "runtime_validation": "13/13 passed in Play Mode"
+}

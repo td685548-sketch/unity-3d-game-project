@@ -1,0 +1,22 @@
+[
+  {
+    "action": "NiemQuyet_Rokoko_Pilot",
+    "source_frames": [
+      31,
+      211
+    ],
+    "frames": 181,
+    "seconds": 6.0,
+    "fbx": "C:\\Users\\dotha\\Documents\\Fsoft-Working\\Games\\PRJ_Game_3D\\PRJ_Game_3D_PNTT\\Assets\\_Game\\Models\\Characters\\NhanVat\\MotionPilot\\NiemQuyet_Rokoko_Pilot.fbx"
+  },
+  {
+    "action": "PhongKiem_Rokoko_Pilot",
+    "source_frames": [
+      211,
+      301
+    ],
+    "frames": 91,
+    "seconds": 3.0,
+    "fbx": "C:\\Users\\dotha\\Documents\\Fsoft-Working\\Games\\PRJ_Game_3D\\PRJ_Game_3D_PNTT\\Assets\\_Game\\Models\\Characters\\NhanVat\\MotionPilot\\PhongKiem_Rokoko_Pilot.fbx"
+  }
+]

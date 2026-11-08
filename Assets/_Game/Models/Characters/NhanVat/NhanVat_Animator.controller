@@ -356,9 +356,9 @@ AnimatorStateTransition:
   m_Mute: 0
   m_IsExit: 0
   serializedVersion: 3
-  m_TransitionDuration: 0.2
+  m_TransitionDuration: 0.22
   m_TransitionOffset: 0
-  m_ExitTime: 0.48387092
+  m_ExitTime: 0.92
   m_HasExitTime: 1
   m_HasFixedDuration: 1
   m_InterruptionSource: 0
@@ -899,7 +899,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 1
-  m_Motion: {fileID: -203655887218126122, guid: 8be8692fc2bc12341b1a593b136324b4, type: 3}
+  m_Motion: {fileID: 7400000, guid: 36c3ea5f67128a44a9872c4b8c63b0ac, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -1171,7 +1171,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: NiemQuyet
-  m_Speed: 1.4
+  m_Speed: 1.5
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: -7327102715159578392}
@@ -1186,7 +1186,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -203655887218126122, guid: e3f3e202cb753ea4ab6ea2885898b5d8, type: 3}
+  m_Motion: {fileID: 7400000, guid: 225fa933c37f35440a85002ca917ffe0, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -1395,7 +1395,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -203655887218126122, guid: 8be8692fc2bc12341b1a593b136324b4, type: 3}
+  m_Motion: {fileID: 7400000, guid: 36c3ea5f67128a44a9872c4b8c63b0ac, type: 2}
   m_Tag: 
   m_SpeedParameter: ShootRetractSpeed
   m_MirrorParameter: 

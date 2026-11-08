@@ -17,8 +17,8 @@ public enum SwordMode
 /// Kiếm không tự cập nhật: SwordSwarm gọi <see cref="Tick"/> mỗi khung hình để mọi kiếm chạy đúng thứ tự.
 /// - Trong đội hình: bay tới vị trí đích bằng lò xo (mượt, hơi nảy), không dịch chuyển tức thời.
 /// - Mũi kiếm luôn quay theo hướng bay; khi đã yên vị thì theo hướng của đội hình (Kiếm Luân: chĩa ra ngoài).
-/// - Khi có mục tiêu: cả đàn dùng chung đường lao thẳng và vòng lượn, bám theo mục tiêu.
-/// - Bị chặn/va kiếm thì ngắt sát thương ngắn rồi nối đàn; gặp vật cản không xuyên qua.
+/// - Khi có mục tiêu: từng kiếm tự lượn truy kích và đổi hướng theo vị trí địch.
+/// - Bị chặn/va kiếm thì bật lệch tại chiến trường rồi truy kích lại; gặp vật cản không xuyên qua.
 /// - Không có mục tiêu thì phóng theo điểm ngắm.
 /// Quy ước mô hình: pivot ở giữa chuôi, mũi kiếm là trục +Z, mặt phẳng lưỡi vuông góc trục Y.
 /// </summary>
@@ -43,8 +43,7 @@ public class FlyingSword : MonoBehaviour
     private TaTu pursuitDefender;
     private float nextPassAt;
     private Vector3 pursuitDirection;
-    private int flockSlot;
-    private SwordFlockPath flockPath;
+    private Vector3 escapePoint;
     private bool retiring;
 
     private void OnEnable() { All.Add(this); }
@@ -291,7 +290,6 @@ public class FlyingSword : MonoBehaviour
         ClearGuard();
         Mode = SwordMode.Strike;
         combatCenter = end;
-        flockPath = null;
         pursuitDirection = (end - transform.position).sqrMagnitude > 0.001f
             ? (end - transform.position).normalized : transform.forward;
         nextPassAt = Time.time;
@@ -308,7 +306,6 @@ public class FlyingSword : MonoBehaviour
     {
         if (target == null || !target.IsAlive) return;
         LaunchStrike(target.AimPoint, speed, damage, returnTime, intentGain);
-        JoinFlock(target, target.AimPoint);
         pursuitTarget = target;
         pursuitHadTarget = true;
         pursuing = true;
@@ -400,9 +397,12 @@ public class FlyingSword : MonoBehaviour
             ClearGuard();
             Mode = SwordMode.Strike;
             pursuing = true;
-            // A block pauses damage, but the blade stays in its file on the shared loop.
+            Vector3 side = Vector3.Cross(Vector3.up, pursuitDirection).normalized;
+            pursuitDirection = (-pursuitDirection + side * (Index % 2 == 0 ? 0.8f : -0.8f)
+                + Vector3.up * 0.65f).normalized;
+            escapePoint = transform.position + pursuitDirection * 3.5f;
             nextPassAt = Time.time + 0.55f;
-            Velocity = pursuitDirection * strikeSpeed;
+            Velocity = pursuitDirection * strikeSpeed * 0.5f;
             return;
         }
         BeginReturn(settleTime);
@@ -637,12 +637,6 @@ public class FlyingSword : MonoBehaviour
         transform.rotation = Quaternion.Slerp(transform.rotation, look, 1f - Mathf.Exp(-strikeTurnSharpness * dt));
     }
 
-    private void JoinFlock(Damageable target, Vector3 point)
-    {
-        flockPath = Swarm.GetFlockPath(target);
-        flockSlot = flockPath.Join(Swarm, this, target, point);
-    }
-
     private void StepPursuit(float dt)
     {
         // A finished target ends this flight command, including destroyed/despawned enemies.
@@ -653,33 +647,30 @@ public class FlyingSword : MonoBehaviour
         }
         if (Swarm.LockedTarget != null && Swarm.LockedTarget.IsAlive && Swarm.LockedTarget != pursuitTarget)
         {
-            JoinFlock(Swarm.LockedTarget, Swarm.LockedTarget.AimPoint);
             pursuitTarget = Swarm.LockedTarget;
             pursuitDefender = pursuitTarget.GetComponent<TaTu>();
         }
         if (pursuitTarget == null || !pursuitTarget.IsAlive || !pursuitTarget.isActiveAndEnabled)
         {
             pursuitTarget = Swarm.FindPursuitTarget(combatCenter, 30f);
-            if (pursuitTarget != null) JoinFlock(pursuitTarget, pursuitTarget.AimPoint);
             pursuitDefender = pursuitTarget != null ? pursuitTarget.GetComponent<TaTu>() : null;
         }
         if (pursuitTarget != null) combatCenter = pursuitTarget.AimPoint;
         if (pursuitTarget != null) pursuitHadTarget = true;
-        if (flockPath == null) JoinFlock(pursuitTarget, combatCenter);
-        Vector3 tangent;
-        Vector3 routePoint = flockPath.Sample(pursuitTarget, flockSlot, strikeSpeed, out tangent);
-        Vector3 frameStart = transform.position;
-        // Catch up smoothly when joining from the defensive wheel; never teleport onto the lane.
-        Vector3 frameEnd = Vector3.MoveTowards(frameStart, routePoint, strikeSpeed * 1.65f * dt);
-        int substeps = Mathf.Max(1, Mathf.CeilToInt(Vector3.Distance(frameStart, frameEnd) / 0.3f));
+        int substeps = Mathf.Max(1, Mathf.CeilToInt(strikeSpeed * dt / 0.3f));
+        float h = dt / substeps;
         for (int i = 0; i < substeps && Mode == SwordMode.Strike; i++)
         {
             bool recovering = Time.time < nextPassAt;
-            Vector3 next = Vector3.Lerp(frameStart, frameEnd, (i + 1f) / substeps);
-            Vector3 step = next - transform.position;
-            pursuitDirection = step.sqrMagnitude > 0.000001f ? step.normalized : tangent;
-            float moveSpeed = dt > 0f ? Vector3.Distance(frameStart, frameEnd) / dt : 0f;
-            Vector3 from = transform.position, to = next;
+            float orbit = Time.time * 1.4f + Index * 2.39996f;
+            Vector3 idlePoint = combatCenter + new Vector3(Mathf.Cos(orbit) * 3f,
+                1.5f + Mathf.Sin(orbit * 1.3f) * 0.7f, Mathf.Sin(orbit) * 3f);
+            Vector3 aim = recovering ? escapePoint : pursuitTarget != null ? pursuitTarget.AimPoint : idlePoint;
+            pursuitDirection = SwordFlightMath.Steer(pursuitDirection, transform.position, aim,
+                Index * 2.39996f, Time.time, Swarm.PursuitTurnSpeed, recovering ? 0f : Swarm.PursuitArc, h);
+            float moveSpeed = strikeSpeed * Mathf.Lerp(0.25f, 1f,
+                Mathf.Clamp01((aim - transform.position).magnitude / 4f));
+            Vector3 from = transform.position, to = from + pursuitDirection * moveSpeed * h;
             Velocity = pursuitDirection * moveSpeed;
             transform.rotation = Quaternion.LookRotation(pursuitDirection, Vector3.up);
             if (EnemyBlade.TryClash(this, from, to)) return;
@@ -699,6 +690,9 @@ public class FlyingSword : MonoBehaviour
     private void BeginPassRecovery()
     {
         nextPassAt = Time.time + Swarm.PursuitHitInterval;
+        Vector3 side = Vector3.Cross(Vector3.up, pursuitDirection).normalized;
+        escapePoint = combatCenter + pursuitDirection * 4f
+            + side * ((Index % 2 == 0 ? 1f : -1f) * 2.5f) + Vector3.up * 1.2f;
     }
 
     /// <summary>Kiểm tra thân kiếm có chạm vật nào có thể bị đánh không và gây sát thương.</summary>

@@ -1,11 +1,9 @@
-# Phi kiếm bay theo bầy
+# Phi kiếm: trở lại truy kích độc lập
 
-Phi kiếm người chơi dùng chung một đường bay cho mỗi mục tiêu. Khi phóng, kiếm nhập ba hàng hẹp, lao thẳng vào địch rồi nối nhau lượn theo một vòng elip nằm ngang. Khoảng cách dọc giữa các nhóm là 0,8 m, khoảng cách ngang 0,18 m; vòng lượn dài 10 m, rộng 4,8 m. Đường bay bám theo vị trí địch và giữ hướng vòng ổn định, không tự xoay vòng theo từng thanh.
+Theo yêu cầu mới, đã bỏ đường bay chung theo bầy. Mỗi kiếm dùng nhịp lượn riêng, hướng tiếp cận riêng và điểm thoát riêng sau khi đánh trúng hoặc bị chặn, giống cơ chế trước khi thêm SwordFlockPath.
 
-Bỏ nhịp sin riêng theo Index, điểm thoát hai phía và cú bật ngược độc lập khi đỡ kiếm. Kiếm bị chặn giữ vị trí trong bầy, ngắt sát thương ngắn rồi tiếp tục đường bay. Vật cản vẫn được kiểm tra từng đoạn tối đa 0,3 m nên không xuyên tường.
+Giữ truy kích liên tục, R thu kiếm và tự thu khi mục tiêu chết/bị hủy/tắt. Hết pháp lực không hủy lệnh của kiếm đã phóng. Va kiếm, chắn đòn và kiểm tra vật cản giữ nguyên.
 
-R hủy lệnh; địch chết, bị hủy hoặc tắt tự thu kiếm. Kiếm đã phóng vẫn tiếp tục khi hết pháp lực. Đội hình hộ thân và kiếm địch giữ cơ chế hiện có.
+Clip phi_kiem_theo_bay.mp4 và kết quả đo độ tụ 12 kiếm là bản cũ, không còn mô tả chuyển động hiện tại.
 
-Nguồn: SwordFlockPath.cs, FlyingSword.cs và SwordSwarm.cs. Menu quay kiểm tra: Phàm Kiếm Lục > Đấu phi kiếm > Quay đàn kiếm trong Play. Camera quay chỉ tồn tại trong Play, không ghi vào scene.
-
-Kiểm chứng trong SanTap Play Mode: 26/26 kiểm tra qua. Với 12 kiếm, độ giãn lớn nhất khi lượn vòng 2,49 m; kiếm bị chặn giữ cách kiếm cùng hàng khoảng 0,18 m. Clip quay Unity 10 giây: Assets/Screenshots/phi_kiem_theo_bay.mp4.
+Đã chạy lại 24/24 kiểm tra đấu phi kiếm trong SanTap Play Mode sau khi khôi phục; Console không có lỗi.

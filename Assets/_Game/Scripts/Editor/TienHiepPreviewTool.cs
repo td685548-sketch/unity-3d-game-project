@@ -5,10 +5,62 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
-/// <summary>Records a deterministic four-second exchange in the real SanTap scene, then restores runtime state.</summary>
+/// <summary>Records a repeatable gameplay exchange in the real SanTap scene, then restores runtime state.</summary>
 public static class TienHiepPreviewTool
 {
-    private static bool flockOnly;
+    private static bool swordsOnly, motionGameplay;
+    private static bool sawChant, sawHold, sawRetract;
+    private static float motionRootY;
+    private static readonly System.Text.StringBuilder motionReport = new System.Text.StringBuilder();
+    public static string MotionReport => motionReport.ToString();
+    [MenuItem("Phàm Kiếm Lục/Animation/Quay và kiểm tra animation gameplay")]
+    public static void RunMotionGameplay()
+    {
+        if (!EditorApplication.isPlaying || Running) return;
+        motionGameplay=true;swordsOnly=true;sawChant=sawHold=sawRetract=false;motionReport.Clear();
+        Run();
+    }
+    private static void MotionCheck(bool ok,string name)
+    {motionReport.AppendLine((ok?"PASS ":"FAIL ")+name);}
+    private static int Pursuing()
+    {int n=0;foreach(var sword in SwordSwarm.Instance.Swords)if(sword.HasPursuitCommand)n++;return n;}
+    private static void MotionTick()
+    {
+        var stats=PlayerStats.Instance;var swarm=SwordSwarm.Instance;var a=stats.GetComponentInChildren<Animator>();
+        int layer=a.GetLayerIndex("UpperBody");var state=a.GetCurrentAnimatorStateInfo(layer);
+        sawChant|=state.shortNameHash==Animator.StringToHash("NiemQuyet");
+        sawHold|=state.shortNameHash==Animator.StringToHash("TayGiu");
+        sawRetract|=state.shortNameHash==Animator.StringToHash("TayThu");
+        if(frame==20)motionRootY=stats.transform.position.y;
+        if(frame==106)
+        {
+            typeof(SwordSwarm).GetMethod("RequestSingle",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).Invoke(swarm,null);
+            MotionCheck(Pursuing()==0,"first shot waits for hand motion");
+        }
+        if(frame==112)MotionCheck(Pursuing()==0,"no launch before .36 second gate");
+        if(frame==120)MotionCheck(Pursuing()==1,"first sword launches after gate");
+        if(frame==130)
+        {
+            typeof(SwordSwarm).GetMethod("RequestSingle",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).Invoke(swarm,null);
+            MotionCheck(Pursuing()>=2,"follow-up shot fires immediately from held pose");
+        }
+        if(frame==155)
+        {
+            MotionCheck(state.shortNameHash==Animator.StringToHash("TayGiu"),"hand stays raised during pursuit");
+            MotionCheck(Mathf.Abs(a.GetFloat("ShootHoldTime")-1.066667f/3f)<.002f,"hold frame matches new release clip");
+            MotionCheck(Mathf.Abs(stats.transform.position.y-motionRootY)<.04f,"upper body motion does not move player root");
+        }
+        if(frame==170){swarm.RecallAll();MotionCheck(Pursuing()==0,"R recalls all deployed swords");}
+        if(frame==253)
+        {
+            MotionCheck(sawChant,"new chant state plays");MotionCheck(sawHold,"new hold state plays");MotionCheck(sawRetract,"new retract state plays");
+            MotionCheck(state.shortNameHash==Animator.StringToHash("Trong"),"returns to locomotion after recall");
+            bool correct=true;foreach(var clip in a.runtimeAnimatorController.animationClips)
+                if(clip.name=="NiemQuyet_Rokoko"||clip.name=="PhongKiem_Rokoko")correct&=clip.humanMotion;
+            MotionCheck(correct,"replacement clips are humanoid");
+            System.IO.File.WriteAllText("Library/MotionPilot/GameplayValidation.txt",MotionReport);
+        }
+    }
     private static Camera camera;
     private static RenderTexture target;
     private static Texture2D pixels;
@@ -28,11 +80,11 @@ public static class TienHiepPreviewTool
     public static bool Running => camera != null;
     public static string Status { get; private set; }
 
-    [MenuItem("Phàm Kiếm Lục/Đấu phi kiếm/Quay đàn kiếm trong Play")]
-    public static void RunFlock()
+    [MenuItem("Phàm Kiếm Lục/Đấu phi kiếm/Quay phi kiếm trong Play")]
+    public static void RunSwords()
     {
         if (!EditorApplication.isPlaying || Running) return;
-        flockOnly = true;
+        swordsOnly = true;
         Run();
     }
 
@@ -82,7 +134,7 @@ public static class TienHiepPreviewTool
         try
         {
             var skill = ThanThongCombat.Instance;
-            if (flockOnly)
+            if (swordsOnly)
             {
                 if (frame == 2)
                 {
@@ -92,10 +144,11 @@ public static class TienHiepPreviewTool
                     var enemy = opponent.GetComponent<TaTu>();
                     foreach (var blade in enemy.Blades) blade.gameObject.SetActive(false);
                 }
-                if (frame == 30) SwordSwarm.Instance.FireVolley();
+                if (!motionGameplay && frame == 30) SwordSwarm.Instance.FireVolley();
             }
-            if (!flockOnly && frame == 2) skill.BeginWard();
-            if (!flockOnly && frame == 18)
+            if (motionGameplay) MotionTick();
+            if (!swordsOnly && frame == 2) skill.BeginWard();
+            if (!swordsOnly && frame == 18)
             {
                 incoming = new GameObject("VFXPreview_Orb");
                 TienHiepVfx.Heart(incoming.transform, skill.auraMaterial, new Color(1, 0.48f, 0.08f, 0.8f));
@@ -104,14 +157,14 @@ public static class TienHiepPreviewTool
                 incoming.AddComponent<EnemyOrb>().Launch(opponent.transform.position + Vector3.up * 1.3f,
                     PlayerStats.Instance.transform.position + Vector3.up * 1.2f, 20, 1, PlayerStats.Instance);
             }
-            if (!flockOnly && frame == 40) skill.EndWard(false);
-            if (!flockOnly && frame == 45) skill.CastLotus();
-            if (!flockOnly && frame == 105)
+            if (!swordsOnly && frame == 40) skill.EndWard(false);
+            if (!swordsOnly && frame == 45) skill.CastLotus();
+            if (!swordsOnly && frame == 105)
             {
                 PlayerStats.Instance.SetRealmIndex(2); SwordSwarm.Instance.SwordCount = 16;
                 SwordSwarm.Instance.SetActive(true, true);
             }
-            if (!flockOnly && frame == 130)
+            if (!swordsOnly && frame == 130)
             {
                 SwordSwarm.Instance.FireVolley();
                 var enemy = opponent.GetComponent<TaTu>();
@@ -122,11 +175,16 @@ public static class TienHiepPreviewTool
             camera.transform.position = Vector3.Lerp(new Vector3(-20.5f, 2.6f, -18), new Vector3(-18.5f, 3.2f, -10.5f), pullback);
             camera.transform.LookAt(Vector3.Lerp(new Vector3(-24, 1.8f, -25), new Vector3(-18.5f, 1.7f, -25), pullback));
             camera.fieldOfView = Mathf.Lerp(43, 49, pullback);
-            if (flockOnly)
+            if (swordsOnly)
             {
                 camera.transform.position = new Vector3(-18.5f, 9f, -10.5f);
                 camera.transform.LookAt(new Vector3(-18.5f, 0.8f, -25));
                 camera.fieldOfView = 52;
+            }
+            if(motionGameplay)
+            {
+                camera.transform.position=new Vector3(-20.7f,2.0f,-21.5f);
+                camera.transform.LookAt(new Vector3(-24,1.05f,-25));camera.fieldOfView=32;
             }
             var previous = RenderTexture.active;
             try
@@ -136,7 +194,7 @@ public static class TienHiepPreviewTool
             }
             finally { RenderTexture.active = previous; }
             frame++;
-            if (frame >= (flockOnly ? 240 : 180))
+            if (frame >= (motionGameplay ? 264 : swordsOnly ? 240 : 180))
             {
                 Status = "Complete: " + folder; SessionState.SetString("TienHiepPreviewFolder", folder);
                 Finish();
@@ -150,7 +208,7 @@ public static class TienHiepPreviewTool
         ThanThongCombat.PreviewFrame -= Tick; EditorApplication.playModeStateChanged -= OnPlayMode; Time.captureFramerate = oldCaptureRate;
         if (camera != null) { camera.targetTexture = null; Object.DestroyImmediate(camera.gameObject); }
         if (target != null) Object.DestroyImmediate(target); if (pixels != null) Object.DestroyImmediate(pixels);
-        camera = null; target = null; pixels = null; flockOnly = false;
+        camera = null; target = null; pixels = null; swordsOnly = false; motionGameplay=false;
         if (opponent != null) Object.Destroy(opponent); if (incoming != null) Object.Destroy(incoming);
         if (ThanThongCombat.Instance != null) ThanThongCombat.Instance.EndWard(false);
         if (PlayerStats.Instance != null)

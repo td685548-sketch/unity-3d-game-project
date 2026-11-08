@@ -7413,6 +7413,8 @@ MonoBehaviour:
   minPitch: -30
   maxPitch: 60
   lockCursorOnStart: 1
+  switchViewKey: 20
+  firstPersonHeight: 1.65
 --- !u!1 &1513576170
 GameObject:
   m_ObjectHideFlags: 0
@@ -7701,7 +7703,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f37047c091da81c488f09faaab2ca6eb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SwordArrayVisual
   material: {fileID: 2100000, guid: d4e57e6a2d7e8a7408ee3e96ac5e54ec, type: 2}
   tint: {r: 0.03, g: 1, b: 0.65, a: 1}
@@ -9308,16 +9310,17 @@ MonoBehaviour:
   maxAnimSpeed: 1.5
   speedSmoothTime: 0.06
   groundedGrace: 0.12
+  shootPoseClip: {fileID: 7400000, guid: 36c3ea5f67128a44a9872c4b8c63b0ac, type: 2}
   cameraOrbit: {fileID: 1459372523}
-  shootKeyTime: 0.9
-  raiseTime: 0.08
+  shootKeyTime: 1.066667
+  raiseTime: 0.36
   releaseDelay: 0.35
-  retractSpeed: 2.5
-  retractEndClipTime: 2.95
-  retractBlendTime: 0.12
-  kickForearmAngle: 8
-  kickHandAngle: 8
-  kickTime: 0.1
+  retractSpeed: 1.4
+  retractEndClipTime: 3
+  retractBlendTime: 0.2
+  kickForearmAngle: 2
+  kickHandAngle: 2
+  kickTime: 0.16
   maxAimPitch: 25
   aimBlendSpeed: 10
   stats: {fileID: 2127460595}
@@ -9697,7 +9700,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3e50ef1e312abcf4f84c8ac04417d0a9, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ThanThongCombat
   lotusPrefab: {fileID: 2802424799806102619, guid: f04f7b52777a85a44b23973d859f262b, type: 3}
   auraMaterial: {fileID: 2100000, guid: 05c99ff60b0e8684285df85306897830, type: 2}

@@ -24,19 +24,6 @@ public enum FormationType
 public class SwordSwarm : MonoBehaviour
 {
     public static SwordSwarm Instance { get; private set; }
-    private readonly Dictionary<Damageable, SwordFlockPath> flockPaths = new Dictionary<Damageable, SwordFlockPath>();
-    private readonly SwordFlockPath untargetedFlockPath = new SwordFlockPath();
-    public SwordFlockPath GetFlockPath(Damageable target)
-    {
-        if (target == null) return untargetedFlockPath;
-        SwordFlockPath path;
-        if (!flockPaths.TryGetValue(target, out path))
-        {
-            path = new SwordFlockPath();
-            flockPaths.Add(target, path);
-        }
-        return path;
-    }
     public Transform Owner => owner;
     public Damageable LockedTarget { get; private set; }
     public int BlocksMade { get; private set; }
